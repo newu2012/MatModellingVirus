@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-import random
-
+import random as rnd
 from PyQt5 import QtCore, QtWidgets, uic
 import sys
 import numpy as np
@@ -42,7 +41,9 @@ def SIR(population, days_before_treatment, contacts_per_human, contacts_per_huma
         prob1 = total_infected / (population - 1)  # probability of contacting with infected
         prob2 = prob1 * probability_of_transmission  # probability of being infected after contact
         prob_after_one_contact = 1 - prob2  # probability of being not infected after contact
-        prob_after_mult_contacts = prob_after_one_contact ** contacts_per_human  # probability of being not infected
+        prob_after_mult_contacts = prob_after_one_contact ** \
+                                   rnd.randint(int(contacts_per_human / 2), int(contacts_per_human * 2))
+        # probability of being not infected
         # after multiple contacts
 
         probability_of_becoming_infected = \
@@ -118,8 +119,8 @@ def main():
 
     population = 1500000
     days_before_treatment = 50
-    contacts_per_human = 5
-    contacts_per_human_with_treatment = 3
+    contacts_per_human = 14
+    contacts_per_human_with_treatment = 7
     recovery_days = 14
     recovery_days_with_treatment = 7
     probability_of_transmission = 0.1
@@ -135,7 +136,6 @@ class MplCanvas(FigureCanvas):
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
         super(MplCanvas, self).__init__(fig)
 
 
@@ -146,17 +146,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
         self.setCentralWidget(self.canvas)
-
-        n_data = 50
-        self.xdata = list(range(n_data))
-        self.ydata = [random.randint(0, 10) for i in range(n_data)]
-
         self.show()
 
 
 if __name__ == "__main__":
     main()
-
 
 app = QtWidgets.QApplication(sys.argv)
 window = MainWindow()
