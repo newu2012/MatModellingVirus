@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
+import random
 
-from PyQt5 import QtWidgets, uic
+from PyQt5 import QtCore, QtWidgets, uic
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 import collections
-from textwrap import wrap
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+
+matplotlib.use('Qt5Agg')
 
 np.set_printoptions(suppress=True)
 
@@ -20,7 +25,7 @@ def SIR(population, days_before_treatment, contacts_per_human, contacts_per_huma
     Y = np.zeros((recovery_days,), dtype=int)  # Initialize the array with R ints
     Y[0] = total_infected
 
-    people_susceptible = population - total_infected  # num people can be infected
+    people_susceptible = population - total_infected  # people can be infected
     total_recovered = 0
 
     total_sum_run = total_infected
@@ -34,8 +39,14 @@ def SIR(population, days_before_treatment, contacts_per_human, contacts_per_huma
         if days_simulated >= days_before_treatment:
             probability_of_transmission *= 0.95
 
+        prob1 = total_infected / (population - 1)  # probability of contacting with infected
+        prob2 = prob1 * probability_of_transmission  # probability of being infected after contact
+        prob_after_one_contact = 1 - prob2  # probability of being not infected after contact
+        prob_after_mult_contacts = prob_after_one_contact ** contacts_per_human  # probability of being not infected
+        # after multiple contacts
+
         probability_of_becoming_infected = \
-            1 - (1 - ((probability_of_transmission * total_infected) / (population - 1))) ** contacts_per_human
+            1 - prob_after_mult_contacts
         new_infected = np.random.binomial(people_susceptible, probability_of_becoming_infected)
 
         total_sum_run += new_infected
@@ -99,12 +110,6 @@ def runner(num_sims, population, days_before_treatment, contacts_per_human, cont
     mean_infected = float(total_infected) / num_sims
     print('mean duration = ', mean_duration, ' mean infected = ', mean_infected)
 
-    variance = 0.0
-    for days in durations:
-        variance += (days - mean_duration) ** 2
-    variance = variance / num_sims
-    print("variance\t\t", variance, "\n")
-
     graph(durations)
 
 
@@ -126,13 +131,34 @@ def main():
            probability_of_transmission_with_treatment, infected_at_day1)
 
 
+class MplCanvas(FigureCanvas):
+
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = fig.add_subplot(111)
+        super(MplCanvas, self).__init__(fig)
+
+
+class MainWindow(QtWidgets.QMainWindow):
+
+    def __init__(self, *args, **kwargs):
+        super(MainWindow, self).__init__(*args, **kwargs)
+
+        self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
+        self.setCentralWidget(self.canvas)
+
+        n_data = 50
+        self.xdata = list(range(n_data))
+        self.ydata = [random.randint(0, 10) for i in range(n_data)]
+
+        self.show()
+
+
 if __name__ == "__main__":
     main()
 
-app = QtWidgets.QApplication([])
-win = uic.loadUi("design.ui")
 
-win.show()
-sys.exit(app.exec())
+app = QtWidgets.QApplication(sys.argv)
+window = MainWindow()
 
-
+app.exec_()
